@@ -1,0 +1,23 @@
+﻿3-1) To set pixel at (x,y): fb[i] = 0x00111111; (WHITE)
+        To clr pixel at (x,y): fb[i] = 0x00000000; (BLACK)
+        What is i value? i = 
+i is just the indexing value to determine what pixel on the screen you are printing to. It just shows where on the screen the pixel is. I don’t know how else to word this to make it sound any clearer, but I is just the index that signifys which pixel is currently being set.
+
+3-2. Each char is a 16X8 bitmap, i.e. each char is a y=16 X x=8 rectangle
+        The LCD screen can display how many rows X columns of chars?
+        rows = ____________? cols = _________________?
+This should just be really easy, like simple arithmetic. If we have a screen that is x=640 by y=480 pixels. If each char is x=8 and y=16. The number of rows should be 480/16 = 30. The number of columns should be 640/8 = .80 Final Answer: Rows = 30, Columns = 804
+
+int row, col are row, column bumbers of text chars on the screen
+   Each char has 16X8 bits = 16 lines of 8 pixels on the screen
+3-3. To display a char c at (row, col):
+                      
+        How to test bits in each line of c for 0 or 1?
+
+	To test the bits in each line, take the char as an input, search for the address of c. Search for each byte of the 16 lines. While searching each byte can search for every bit in the byte. Here you can look at bit value.
+
+        How to display the char c at (row, col)?_____________________________
+
+Do same as previous part getting all the way down to the bit. Then if the bit is one we can print. Calculate Pixel number by doing (y+row)*640 + (x+bit). This is sort of a reverse mallmans algorithm. Then Check what color it is and set fb[pix] to the hex value associated with that color
+                      
+

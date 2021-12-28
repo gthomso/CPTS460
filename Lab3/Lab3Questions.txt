@@ -1,0 +1,136 @@
+﻿1. In order to use an I/O device by interrupts, 4 conditions must be met.
+---------------------------------------------------------------------------
+(1). The device must be allowed to generate interrupts.
+(2). The SIC and VIC interrupt controllers must be programmed to route the
+     device interrupt through to CPU's IRQ line.
+(3). When a device interrupt occurs, the CPU must be in a state to accept
+     interrupts.
+(4). An interrupt handler (function) must be installed to handle the device
+     interrupts.
+-----------------------------------------------------------------------------
+
+       For the KBD driver program C3.2 in the textbook,
+Answer the above questions by identifying the lines of code that do (1) to (4):
+
+(1). Where and How is KBD allowed to generate interrupts?
+
+	KBD is allowed to generate interrupts in main, with the following lines:
+	*(VIC_BASE + VIC_INTENABLE) |= (1<<31); 
+	*(SIC_BASE + SIC_INTENABLE) |= (1<<3);
+	These both enable the keyboard interrupt. Do this by signifying the 3 spot on the 	secondary interrupt control to be enabled. The top interrupt from SIC is the 31st spot on 	the primary interrupt control, so we also enable this to allow for keyboard interrupt to 	go thru the primary interrupt control.
+
+
+(2). Which code lines route KBD interrupts to CPU?
+	
+	Okay so this question depends on the scope, a lot of these questions are vague so I’m probably going to over-answer them.
+	When interrupt occurs the CPU follows the irq vector and goes to assembly irq handler, which in turn calls the c-code irq handler. IRQ handler sees from the VIC amd the SIC status that the interrupt was that of the keyboard so it then calls kbd_handler then reads into scode which is decrypted into a symbol we can read and symbol is put into a buffer. Kgetc then gets this character and does stuff with it.
+The relevant lines of code for what is described in my opinion are the following. 
+The lines from part a)
+bl	IRQ_handler
+if (vicstatus & (1<<31)){
+if (sicstatus & (1<<3)){
+kbd_handler();
+}
+}
+scode = *(kp->base + KDATA);
+These outline how it gets to the CPU
+
+(3). CPU runs main() in SVC mode. It enters IRQ mode to handle IRQ interrupts.
+     Which code line allows CPU to accept interrupts?
+
+	That would be the the lines in assembly:
+MSR cpsr, #0x12
+  LDR sp, =irq_stack
+and the lines in main:
+*(VIC_BASE + VIC_INTENABLE) |= (1<<31); // SIC to VIC's IRQ31
+
+/* enable KBD IRQ */
+*(SIC_BASE + SIC_INTENABLE) |= (1<<3); // KBD int=3 on SIC
+
+
+
+(4). Identify IRQ interrupts handler entry point 
+
+	Again depends goes to vectors table first to show that it needs to be a irq handler, but the code from assembly calling the c code is this line:
+ bl	IRQ_handler  
+
+     Which function determines it's a KBD interrupt? HOW?
+
+	IRQ_Handler(), does this by checking bits of VIC and SIC to make sure that they are 31 and 3 respectively which is a keyboard interrupt
+
+     Where is the KBD interrupt handler?
+
+Umm in KBD.c. Don’t know what else I could answer this with. Literally a function called kbd_handler()
+
+
+2. In an ARM system supporting IRQ interrupts, e.g. KBD interrupts, 
+   the following components are needed/provided: 
+
+(1). Vector tabble at memory address 0
+     0x18: LDR PC, irq_handler_addr
+     irq_handler_addr: .word irq_handler
+
+(2). irq_handler:
+       sub lr, lr, #4
+       stmfd sp!, {r0-r12, lr}
+       bl  IRQ_handler
+       ldmfd sp!, {r0-r12, pc}^
+
+(3). IRQ_handler{
+       if (VIC.statusBit31 && SIC.statusBit3)
+           kbd_handler();
+     }
+
+
+
+     int data = 0;
+     char c;
+
+(4). kbd_handler()
+     {
+       get scancode;
+       c = ASCII char mapped by scancode;
+       data = 1;
+     }
+      
+(5). char kgetc()
+     {    
+        while(data==0);
+        data = 0;
+        return c;
+     }
+   
+(6). main()
+     {
+        kgetc();     // CPU executes this
+     } 
+
+
+Assume: the CPU executes kgetc() in main().
+
+1. Draw a diagram to show the control flow of CPU when a KBD key is pressed
+
+                   KCW's BAD Answer Example:
+------------------------------------------------------------------------
+                              key
+In (5) at while(data==0); ========> (1) Reason: Exception raised need to figure out 
+							Exception it is to figure out how to 								respond 
+   (1) ===========================> (2) Reason: Because this is the addr the vector table points to.
+
+	(2) ===========================> (3) Reason: Because the assembly irq handler calls the c version
+
+(3) ===========================> (4): Because again its called from the c-code IRQ handler
+
+(4) ===========================> (3) Goes back to IRQ_handler
+
+(3) ===========================> (2) Returns to irq assembly
+
+(2) ===========================> (5) Returns to SVC mode and continues processing 
+
+--------------- YOU finish the diagram with valid reasons -----------
+
+
+
+
+                     
+
